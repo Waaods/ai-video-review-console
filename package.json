@@ -1,0 +1,17 @@
+﻿{
+  "name": "gaipiantai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "面向 AI 视频改片的本地人工复核台：时间点打点、备注、导出结构化清单给 AI",
+  "scripts": {
+    "start": "node serve.cjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "ai-video",
+    "human-in-the-loop",
+    "review-tool",
+    "nodejs"
+  ],
+  "license": "MIT"
+}

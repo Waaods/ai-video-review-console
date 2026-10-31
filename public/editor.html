@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>改片台 · vibe-remote-v2</title>
+<style>
+  :root{
+    --paper:#F4EDDF; --card:#FFFDF6; --ink:#1B1B1F; --navy:#2B3A55;
+    --yellow:#F2D14E; --coral:#D9553F; --green:#3FAE6A; --line:rgba(27,27,31,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#EFE7D5;color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif}
+  .wrap{max-width:1360px;margin:0 auto;padding:12px 16px 40px}
+  header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  header h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.5px}
+  .chip{font-size:12.5px;padding:3px 10px;border:2px solid var(--ink);border-radius:11px;background:var(--card);font-weight:700}
+  .chip.scene{background:var(--yellow)}
+  .chip.time{font-variant-numeric:tabular-nums;font-size:14.5px}
+  .chip.frame{font-variant-numeric:tabular-nums;opacity:.72}
+  .chip.path{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#FFF3CF;
+    font-variant-numeric:tabular-nums;cursor:default}
+  .spacer{flex:1}
+  button:disabled{opacity:.45;filter:grayscale(1);cursor:not-allowed}
+  .banner{margin:0 0 9px;background:var(--card);border:2.5px solid var(--ink);border-left:6px solid var(--coral);
+    border-radius:8px;padding:8px 11px;font-size:12.5px;line-height:1.65;font-weight:700}
+  .banner[hidden]{display:none}
+  .banner summary{cursor:pointer;font-weight:800;font-size:12px;margin-top:4px;opacity:.8}
+  .banner pre{margin:6px 0 0;max-height:190px;overflow:auto;font-family:ui-monospace,Consolas,monospace;
+    font-size:11px;font-weight:400;white-space:pre-wrap;word-break:break-all;background:#FFF8E7;
+    border:1.5px solid var(--line);border-radius:5px;padding:6px 8px}
+  .laneLegend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 7px}
+  .lchip{font-size:11.5px;font-weight:700;border:2px solid var(--ink);border-radius:9px;padding:2px 8px;
+    background:var(--card);cursor:pointer;display:inline-flex;align-items:center;gap:5px;user-select:none}
+  .lchip:hover{background:#FFF8DC}
+  .lchip .dot{width:9px;height:9px;border-radius:2px;border:1px solid rgba(0,0,0,.45)}
+  .lchip .n{opacity:.55;font-variant-numeric:tabular-nums}
+  .lchip.off{opacity:.4;text-decoration:line-through}
+  #tooltip{position:absolute;display:none;pointer-events:none;z-index:60;background:var(--ink);color:#fff;
+    padding:6px 9px;border-radius:7px;font-size:11.5px;line-height:1.55;max-width:300px;
+    box-shadow:0 3px 10px rgba(0,0,0,.25)}
+  #tooltip b{display:block;font-size:12.5px;color:var(--yellow);margin-bottom:1px}
+  .stage{background:#000;border:3px solid var(--ink);border-radius:8px;overflow:hidden;line-height:0}
+  video{width:100%;height:auto;display:block;background:#000}
+  .bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:9px 0}
+  button{font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);background:var(--card);
+    border:2.5px solid var(--ink);border-radius:9px 13px 10px 12px;padding:5px 11px;cursor:pointer;
+    box-shadow:2px 2px 0 rgba(27,27,31,.25)}
+  button:hover{background:#FFF8DC}
+  button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(27,27,31,.25)}
+  button.on{background:var(--yellow)}
+  button.danger{border-color:var(--coral);color:var(--coral)}
+  button.big{font-size:14px;padding:7px 14px;background:var(--yellow)}
+  .sep{width:1px;height:22px;background:var(--line);margin:0 3px}
+  select{font-family:inherit;font-size:13px;font-weight:700;padding:5px 8px;border:2.5px solid var(--ink);
+    border-radius:8px;background:var(--card);color:var(--ink)}
+  .tlbox{border:3px solid var(--ink);border-radius:8px;background:var(--card);overflow-x:auto;overflow-y:hidden}
+  canvas{display:block;cursor:crosshair}
+  .hint{font-size:11.5px;opacity:.72;margin:6px 2px 0;line-height:1.75}
+  .hint kbd{font-family:inherit;border:1.5px solid var(--ink);border-bottom-width:2.5px;border-radius:5px;
+    padding:0 5px;background:#fff;font-size:11px}
+  .cols{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:12px}
+  @media (max-width:980px){.cols{grid-template-columns:1fr}}
+  .panel{border:3px solid var(--ink);border-radius:8px;background:var(--card);padding:11px}
+  .panel h2{font-size:13px;margin:0 0 8px;letter-spacing:.6px;display:flex;align-items:center;gap:8px}
+  .panel h2 .n{font-size:11.5px;font-weight:700;opacity:.6}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+  .fchip{font-size:11.5px;font-weight:700;border:2px solid var(--ink);border-radius:10px;padding:2px 9px;
+    background:var(--card);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .fchip.sel{background:var(--ink);color:#fff}
+  .fchip .dot{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.35)}
+  .list{max-height:430px;overflow:auto}
+  .mk{display:grid;grid-template-columns:20px 10px 74px 30px 1fr 88px auto auto;gap:6px;align-items:center;
+    border:2px solid rgba(27,27,31,.35);border-radius:7px;padding:5px 7px;margin-bottom:6px;background:#FFF8E7}
+  .mk.sel{border-color:var(--coral);box-shadow:0 0 0 2px rgba(217,85,63,.25)}
+  .mk.picked{background:#FFEFC9;border-color:#B8860B;border-style:dashed}
+  .mk .pk{width:20px;height:20px;padding:0;line-height:1;font-size:12px;font-weight:900;border-radius:5px;
+    border:2.5px solid var(--ink);background:#fff;box-shadow:none;color:var(--coral)}
+  .mk.picked .pk{background:var(--coral);color:#fff;border-color:var(--coral)}
+  .mergewrap{display:flex;gap:8px;align-items:center;margin:-2px 0 9px}
+  .mergewrap button{font-size:12.5px;padding:4px 10px;background:var(--yellow)}
+  .mergewrap button:disabled{opacity:.45;filter:grayscale(1);cursor:not-allowed}
+  .mergewrap span{font-size:11.5px;opacity:.7}
+  .mk .dot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.4)}
+  .mk .tm{font-variant-numeric:tabular-nums;font-size:12px;font-weight:800;color:var(--navy)}
+  .mk .sc{font-size:11px;font-weight:800;opacity:.65}
+  .mk input{font-family:inherit;font-size:13px;padding:3px 6px;border:2px solid rgba(27,27,31,.45);
+    border-radius:5px;background:#fff;color:var(--ink);min-width:60px}
+  .mk select{font-size:11.5px;padding:2px 4px;border-width:2px}
+  .mk button{font-size:11px;padding:2px 7px;box-shadow:none;border-width:2px}
+  .empty{font-size:12.5px;opacity:.6;padding:6px 2px}
+  textarea{width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px;min-height:150px;
+    border:2.5px solid var(--ink);border-radius:7px;padding:8px;background:#FFFDF6;color:var(--ink);resize:vertical}
+  .row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:7px}
+  .cats .c{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:12.5px}
+  .cats .c .dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink)}
+  .cats .c .nm{font-weight:800}
+  .cats .c button{font-size:11px;padding:1px 6px;box-shadow:none;border-width:2px;margin-left:auto}
+  input[type=color]{width:34px;height:28px;border:2.5px solid var(--ink);border-radius:6px;background:var(--card);padding:1px}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:9px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .flash{position:fixed;inset:0;background:rgba(242,209,78,.28);opacity:0;pointer-events:none;transition:opacity .12s;z-index:40}
+  .flash.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>改片台</h1>
+    <span class="chip path" id="folderChip" title="">未选择文件夹</span>
+    <span class="chip" id="fileChip">…</span>
+    <select id="videoPick" title="切换视频"></select>
+    <span class="chip" id="nodeChip">0 节点 · 0 场景</span>
+    <span class="chip scene" id="sceneChip">S1</span>
+    <span class="chip time" id="timeChip">00:00.00</span>
+    <span class="chip frame" id="frameChip">f0</span>
+    <span class="spacer"></span>
+    <span class="chip" id="countChip">0 个标记</span>
+    <span class="chip" id="zoomChip">12 px/s</span>
+    <button id="pickFolder">选择文件夹</button>
+    <button id="reloadBtn">重新载入</button>
+  </header>
+
+  <div id="banner" class="banner" hidden>
+    <div id="bannerText"></div>
+    <details id="bannerDetails" hidden>
+      <summary>命令与报错</summary>
+      <pre id="bannerPre"></pre>
+    </details>
+  </div>
+
+  <div class="stage"><video id="v" preload="auto" playsinline></video></div>
+
+  <div class="bar">
+    <button id="play">▶ 播放</button>
+    <span class="sep"></span>
+    <button id="fmin1">◀ 1 帧</button>
+    <button id="fplus1">1 帧 ▶</button>
+    <button id="mmin1">◀ 0.1s</button>
+    <button id="mplus1">0.1s ▶</button>
+    <button id="smin1">◀ 1s</button>
+    <button id="splus1">1s ▶</button>
+  </div>
+
+  <div class="bar">
+    <span style="font-size:12px;font-weight:800;opacity:.75">标这一类</span>
+    <select id="catPick"></select>
+    <button id="markPoint" class="big">● 标点 (M)</button>
+    <button id="markIn">入点 (I)</button>
+    <button id="markOut">出点 (O)</button>
+    <button id="undo" class="danger">撤销上一点 (Z)</button>
+    <span class="sep"></span>
+    <button id="loop">循环 (L)</button>
+    <button id="shot">截图 (S)</button>
+    <span class="sep"></span>
+    <button id="zoomOut">−</button>
+    <button id="zoomIn">＋</button>
+    <button id="zoomFit">整段</button>
+  </div>
+
+  <div class="laneLegend" id="laneLegend"></div>
+  <div class="tlbox" id="tlbox"><canvas id="tl" width="828" height="188"></canvas></div>
+  <div class="hint">
+    <b>播放中可直接标点，不会暂停。</b>
+    时间轴：<kbd>滚轮</kbd> 缩放 · <kbd>拖动</kbd> 按帧定位 · <kbd>点击</kbd> 跳转。键盘：<kbd>空格</kbd> 播放 ·
+    <kbd>←/→</kbd> 一帧 · <kbd>Shift+←/→</kbd> 0.1s · <kbd>M</kbd> 标点 · <kbd>I</kbd>/<kbd>O</kbd> 区间 ·
+    <kbd>Z</kbd> 撤销 · <kbd>L</kbd> 循环 · <kbd>G</kbd> 合并勾选的两点 · <kbd>,</kbd> <kbd>.</kbd> 上/下一个标记。
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>标记 <span class="n" id="listCount"></span></h2>
+      <div class="filters" id="filters"></div>
+      <div class="mergewrap">
+        <button id="mergeBtn" disabled>合并为区间 (G)</button>
+        <span id="pickHint">勾选两个点，就能并成一段区间</span>
+      </div>
+      <div class="list" id="list"><div class="empty">还没有标记。播放时按 M 就能标。</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>分类管理</h2>
+      <div class="cats" id="cats"></div>
+      <div class="row">
+        <input id="newCatName" placeholder="新分类名" style="font-family:inherit;font-size:12.5px;padding:4px 8px;border:2px solid var(--ink);border-radius:6px;background:#fff;width:110px">
+        <input type="color" id="newCatColor" value="#F2D14E">
+        <button id="addCat">新建分类</button>
+      </div>
+      <hr style="border:none;border-top:2px dashed var(--line);margin:11px 0">
+      <h2>导出给我</h2>
+      <textarea id="out" readonly placeholder="点下面按钮生成清单，然后整段复制发我。"></textarea>
+      <div class="row">
+        <button id="copyAll">生成并复制清单</button>
+        <button id="refresh">刷新</button>
+        <button id="clearAll" class="danger">清空全部标记</button>
+      </div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </div>
+</div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<div id="tooltip"></div>
+
+<script>
+(function () {
+  var FPS = 30, DURATION = 69, PPS = 12;
+  var MIN_PPS = 4, MAX_PPS = 480;
+  var TL_H = 188, SCENE_H = 46, RULER_H = 70, LANE_TOP = 70, LANE_H = 16, BAR_H = 10;
+  var v = document.getElementById("v");
+  var tl = document.getElementById("tl"), box = document.getElementById("tlbox");
+  var ctx = tl.getContext("2d");
+  var S = {
+    ok: false, kind: null, scenes: [], tweens: [], lanes: [], counts: null,
+    categories: [], markers: [], videos: [], video: null, notice: "", kfError: null
+  };
+  var cat = null, pendingFrom = null, looping = false, dragging = false, flashT = null;
+  var picked = [];
+  var filterCat = "all";
+  var hiddenLanes = {};
+  var hoverId = null;
+  var lastVersion = 0;
+  function $(id) { return document.getElementById(id); }
+  function pad(n, w) { n = String(n); while (n.length < w) n = "0" + n; return n; }
+  function fmt(t) {
+    t = Math.max(0, Math.min(DURATION, t || 0));
+    var m = Math.floor(t / 60), s = t - m * 60;
+    return pad(m, 2) + ":" + (s < 10 ? "0" : "") + s.toFixed(2);
+  }
+  function frameOf(t) { return Math.round((t || 0) * FPS); }
+  function baseName(p) {
+    var s = String(p || "");
+    var i = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+    return i >= 0 ? s.slice(i + 1) : s;
+  }
+  function sceneAt(t) {
+    var scenes = S.scenes || [];
+    for (var i = 0; i < scenes.length; i++) { var s = scenes[i]; if (t >= s.from && t < s.to) return s; }
+    return scenes.length ? scenes[scenes.length - 1] : { id: "?", label: "" };
+  }
+  function catOf(id) { for (var i = 0; i < S.categories.length; i++) if (S.categories[i].id === id) return S.categories[i]; return S.categories[0] || { color: "#ccc", name: "?" }; }
+  function toast(m) {
+    var t = $("toast"); t.textContent = m; t.classList.add("show");
+    clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove("show"); }, 1500);
+  }
+  function flash() {
+    var f = $("flash"); f.classList.add("on");
+    clearTimeout(flashT); flashT = setTimeout(function () { f.classList.remove("on"); }, 130);
+  }
+
+  /* ---------- readout ---------- */
+  function paintReadout() {
+    var t = v.currentTime || 0, sc = sceneAt(t);
+    $("timeChip").textContent = fmt(t);
+    $("frameChip").textContent = "f" + frameOf(t);
+    $("sceneChip").textContent = sc.id + " · " + (sc.label || "");
+    $("zoomChip").textContent = PPS + " px/s";
+    $("countChip").textContent = (S.markers || []).length + " 个标记";
+    $("nodeChip").textContent = (S.tweens || []).length + " 节点 · " + (S.scenes || []).length + " 场景";
+  }
+
+  /* ---------- timeline ---------- */
+  function resizeCanvas() {
+    var w = Math.max(box.clientWidth - 2, Math.ceil(DURATION * PPS));
+    tl.width = w; tl.height = TL_H;
+    tl.style.width = w + "px"; tl.style.height = TL_H + "px";
+  }
+  function xOf(t) { return t * PPS; }
+  function tOf(x) { return Math.max(0, Math.min(DURATION, x / PPS)); }
+  function laneCount() { return Math.max(1, (S.lanes || []).length); }
+  function laneIndex(key) {
+    var lanes = S.lanes || [];
+    for (var i = 0; i < lanes.length; i++) if (lanes[i].key === key) return i;
+    return 0;
+  }
+  function laneOf(key) {
+    var i = laneIndex(key);
+    return (S.lanes || [])[i] || { key: key, label: key || "?", color: "#2B3A55", count: 0 };
+  }
+  function shade(hex, k) {
+    var m = /^#([0-9a-fA-F]{6})$/.exec(String(hex || ""));
+    if (!m) return hex;
+    var n = parseInt(m[1], 16);
+    return "rgb(" + Math.round(((n >> 16) & 255) * k) + "," +
+      Math.round(((n >> 8) & 255) * k) + "," + Math.round((n & 255) * k) + ")";
+  }
+  function nodeX(t) { return Math.round(t.start * PPS); }
+  function nodeW(t) { return Math.max(2, Math.round((t.end - t.start) * PPS)); }
+  function nodeY(t) { return LANE_TOP + laneIndex(t.lane) * LANE_H + 3; }
+  function nodeAt(px, py) {
+    if (py < LANE_TOP || py >= LANE_TOP + laneCount() * LANE_H) return null;
+    var li = Math.floor((py - LANE_TOP) / LANE_H);
+    var lane = (S.lanes || [])[li];
+    if (!lane || hiddenLanes[lane.key]) return null;
+    var best = null, tweens = S.tweens || [];
+    for (var i = 0; i < tweens.length; i++) {
+      var t = tweens[i];
+      if (laneIndex(t.lane) !== li) continue;
+      var x = nodeX(t), w = nodeW(t);
+      if (px >= x - 2 && px <= x + w + 2) best = t;
+    }
+    return best;
+  }
+
+  function drawTimeline() {
+    var w = tl.width, h = tl.height;
+    ctx.clearRect(0, 0, w, h);
+
+    /* 泳道底纹：交替奶油色 + 1px 分隔线 */
+    for (var li = 0; li < laneCount(); li++) {
+      var ly = LANE_TOP + li * LANE_H;
+      ctx.fillStyle = (li % 2 === 0) ? "#FFFCF2" : "#F7F1E4";
+      ctx.fillRect(0, ly, w, LANE_H);
+      ctx.fillStyle = "rgba(27,27,31,.13)";
+      ctx.fillRect(0, ly, w, 1);
+    }
+    ctx.fillStyle = "rgba(27,27,31,.22)";
+    ctx.fillRect(0, LANE_TOP + laneCount() * LANE_H, w, 1);
+
+    /* 场景带 0–46 */
+    var scenes = S.scenes || [];
+    for (var i = 0; i < scenes.length; i++) {
+      var s = scenes[i], x0 = xOf(s.from), x1 = xOf(s.to);
+      ctx.fillStyle = (i % 2 === 0) ? "#FFF8E2" : "#F6EFE0";
+      ctx.fillRect(x0, 0, x1 - x0, SCENE_H);
+      ctx.strokeStyle = "rgba(27,27,31,.5)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x1, 0); ctx.lineTo(x1, SCENE_H); ctx.stroke();
+      if (x1 - x0 > 42) {
+        ctx.fillStyle = "#2B3A55"; ctx.font = "700 13px 'Microsoft YaHei',sans-serif";
+        ctx.fillText(s.id, x0 + 5, 16);
+        if (x1 - x0 > 135) {
+          ctx.fillStyle = "rgba(43,58,85,.7)"; ctx.font = "10.5px 'Microsoft YaHei',sans-serif";
+          ctx.fillText(s.label || "", x0 + 5, 32);
+        }
+      }
+    }
+    /* 标尺 46–70 */
+    ctx.fillStyle = "#FBF6EA"; ctx.fillRect(0, SCENE_H, w, RULER_H - SCENE_H);
+    var stepS = PPS >= 60 ? 0.5 : PPS >= 30 ? 1 : PPS >= 14 ? 2 : PPS >= 6 ? 5 : 10;
+    ctx.strokeStyle = "rgba(27,27,31,.28)"; ctx.fillStyle = "rgba(27,27,31,.6)";
+    ctx.font = "10px ui-monospace,Consolas,monospace";
+    for (var t = 0; t <= DURATION + 0.001; t += stepS) {
+      var tx = xOf(t);
+      ctx.beginPath(); ctx.moveTo(tx, SCENE_H); ctx.lineTo(tx, SCENE_H + 7); ctx.stroke();
+      ctx.fillText(t.toFixed(stepS < 1 ? 1 : 0) + "s", tx + 2, SCENE_H + 18);
+    }
+    ctx.fillStyle = "rgba(27,27,31,.22)"; ctx.fillRect(0, RULER_H - 1, w, 1);
+
+    /* 标记（画在场景带上） */
+    var shown = (S.markers || []).filter(function (mk) { return filterCat === "all" || mk.cat === filterCat; });
+    for (var k = 0; k < shown.length; k++) {
+      var mk = shown[k], c = catOf(mk.cat);
+      var a = xOf(mk.from), b = xOf(mk.to);
+      if (mk.to > mk.from + 0.001) {
+        ctx.fillStyle = c.color + "55";
+        ctx.fillRect(a, 0, Math.max(2, b - a), SCENE_H);
+        ctx.strokeStyle = c.color; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(a, SCENE_H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(b, 0); ctx.lineTo(b, SCENE_H); ctx.stroke();
+      } else {
+        ctx.strokeStyle = c.color; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(a, SCENE_H); ctx.stroke();
+      }
+      /* 小旗 */
+      ctx.fillStyle = c.color;
+      ctx.beginPath(); ctx.moveTo(a, 31); ctx.lineTo(a + 16, 31); ctx.lineTo(a, 45); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(27,27,31,.55)"; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    /* 动画节点：每段一个平色方块 + 上下 1px 深边，无圆角/渐变/阴影 */
+    var tweens = S.tweens || [];
+    for (var n = 0; n < tweens.length; n++) {
+      var tw = tweens[n];
+      var lkey = laneOf(tw.lane).key;
+      if (hiddenLanes[lkey]) continue;
+      var ni = laneIndex(tw.lane);
+      if (ni >= laneCount()) continue;
+      var nx = nodeX(tw), nw = nodeW(tw), ny = nodeY(tw);
+      var col = laneOf(tw.lane).color;
+      ctx.fillStyle = col;
+      ctx.fillRect(nx, ny, nw, BAR_H);
+      ctx.fillStyle = shade(col, 0.78);
+      ctx.fillRect(nx, ny, nw, 1);
+      ctx.fillRect(nx, ny + BAR_H - 1, nw, 1);
+    }
+
+    /* 隐藏泳道：空带 + 淡字 */
+    var scrollLeft = box.scrollLeft || 0;
+    for (var hl = 0; hl < laneCount(); hl++) {
+      var laneDef = (S.lanes || [])[hl];
+      if (!laneDef || !hiddenLanes[laneDef.key]) continue;
+      ctx.fillStyle = "rgba(27,27,31,.26)";
+      ctx.font = "10.5px 'Microsoft YaHei',sans-serif";
+      ctx.fillText(laneDef.label + "（已隐藏）", scrollLeft + 8, LANE_TOP + hl * LANE_H + 12);
+    }
+
+    /* 悬停描边：4 条细黑边 */
+    if (hoverId) {
+      var hov = null;
+      for (var q = 0; q < tweens.length; q++) if (tweens[q].id === hoverId) { hov = tweens[q]; break; }
+      if (hov && !hiddenLanes[laneOf(hov.lane).key]) {
+        var hx = nodeX(hov), hw = nodeW(hov), hy = nodeY(hov);
+        ctx.fillStyle = "#1B1B1F";
+        ctx.fillRect(hx - 2, hy - 2, hw + 4, 2);
+        ctx.fillRect(hx - 2, hy + BAR_H, hw + 4, 2);
+        ctx.fillRect(hx - 2, hy - 2, 2, BAR_H + 4);
+        ctx.fillRect(hx + hw, hy - 2, 2, BAR_H + 4);
+      }
+    }
+
+    /* 待定入点 */
+    if (pendingFrom != null) {
+      var px0 = xOf(pendingFrom);
+      ctx.strokeStyle = "#D9553F"; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(px0, 0); ctx.lineTo(px0, h); ctx.stroke(); ctx.setLineDash([]);
+    }
+    /* 播放头 */
+    var px = xOf(Math.min(v.currentTime || 0, DURATION));
+    ctx.strokeStyle = "#1B1B1F"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, h); ctx.stroke();
+    ctx.fillStyle = "#1B1B1F";
+    ctx.beginPath(); ctx.moveTo(px - 5, 0); ctx.lineTo(px + 5, 0); ctx.lineTo(px, 9); ctx.closePath(); ctx.fill();
+  }
+  function paint() { paintReadout(); drawTimeline(); }
+  function fit() {
+    PPS = Math.max(MIN_PPS, Math.min(MAX_PPS, (box.clientWidth - 6) / DURATION));
+    resizeCanvas(); paint();
+  }
+
+  /* ---------- video ---------- */
+  v.addEventListener("loadedmetadata", function () {
+    if (v.duration && Math.abs(v.duration - DURATION) > 0.05) DURATION = v.duration;
+    fit(); paint();
+  });
+  v.addEventListener("timeupdate", function () {
+    if (looping && S.markers.length) {
+      var r = loopRange();
+      if (r && v.currentTime >= r.to) v.currentTime = r.from;
+    }
+    paint();
+  });
+  v.addEventListener("play", function () { $("play").textContent = "❚❚ 暂停"; });
+  v.addEventListener("pause", function () { $("play").textContent = "▶ 播放"; });
+  if ("requestVideoFrameCallback" in HTMLVideoElement.prototype) {
+    var onFrame = function () { paintReadout(); drawTimeline(); if (!v.paused) v.requestVideoFrameCallback(onFrame); };
+    v.requestVideoFrameCallback(onFrame);
+  }
+  function loopRange() {
+    var sel = document.querySelector(".mk.sel");
+    if (!sel) return null;
+    var mk = S.markers.find(function (x) { return x.id === sel.getAttribute("data-id"); });
+    if (!mk || mk.to <= mk.from) return null;
+    return { from: mk.from, to: mk.to };
+  }
+
+  /* ---------- marking (never pauses) ---------- */
+  function currentT() { return Math.round((v.currentTime || 0) * FPS) / FPS; }
+  function addMark(from, to, text) {
+    return fetch("/api/mark", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: from, to: to, cat: cat, text: text || "" })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.ok) {
+        S.markers.push(d.marker);
+        renderList(); paint(); flash();
+        toast((d.marker.to > d.marker.from ? "已标区间 " : "已标点 ") + fmt(d.marker.from) + "  ·  " + catOf(d.marker.cat).name);
+      } else toast("标点失败：" + (d.error || "?"));
+      return d;
+    });
+  }
+  $("markPoint").onclick = function () { addMark(currentT(), currentT()); };
+  $("markIn").onclick = function () {
+    pendingFrom = currentT();
+    toast("入点 " + fmt(pendingFrom) + "（再按 O 出点，或 M 标点）");
+    paint();
+  };
+  $("markOut").onclick = function () {
+    var t = currentT();
+    if (pendingFrom == null) { addMark(t, t); return; }
+    var a = pendingFrom, b = t; pendingFrom = null;
+    addMark(Math.min(a, b), Math.max(a, b));
+  };
+  $("undo").onclick = function () {
+    if (!S.markers.length) { toast("没有可撤销的标记"); return; }
+    var last = S.markers[S.markers.length - 1];
+    fetch("/api/mark/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: last.id }) })
+      .then(function () { S.markers = S.markers.filter(function (x) { return x.id !== last.id; }); renderList(); paint(); toast("已撤销 " + fmt(last.from)); });
+  };
+  $("loop").onclick = function () {
+    looping = !looping; $("loop").classList.toggle("on", looping);
+    if (looping) { var r = loopRange(); if (r) v.currentTime = r.from; else toast("先点一个区间标记（变成选中）再开循环"); }
+  };
+  $("clearAll").onclick = function () {
+    if (!confirm("清空全部标记？")) return;
+    fetch("/api/mark/clear", { method: "POST" }).then(function () { S.markers = []; renderList(); paint(); toast("已清空"); });
+  };
+  $("shot").onclick = function () {
+    var c = document.createElement("canvas");
+    c.width = v.videoWidth || 1920; c.height = v.videoHeight || 1080;
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    fetch("/api/shot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ t: currentT(), dataUrl: c.toDataURL("image/png") }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { toast("截图已存 " + d.path.split("\\").pop()); $("hint").textContent = d.path; }
+      });
+  };
+
+  /* ---------- transport ---------- */
+  function seek(t) {
+    var target = Math.max(0, Math.min(DURATION - 1 / FPS, Math.round(t * FPS) / FPS));
+    try { v.currentTime = target; } catch (e) {}
+    paint();
+  }
+  $("play").onclick = function () { v.paused ? v.play() : v.pause(); };
+  $("fmin1").onclick = function () { v.pause(); seek(currentT() - 1 / FPS); };
+  $("fplus1").onclick = function () { v.pause(); seek(currentT() + 1 / FPS); };
+  $("mmin1").onclick = function () { v.pause(); seek(currentT() - 0.1); };
+  $("mplus1").onclick = function () { v.pause(); seek(currentT() + 0.1); };
+  $("smin1").onclick = function () { v.pause(); seek(currentT() - 1); };
+  $("splus1").onclick = function () { v.pause(); seek(currentT() + 1); };
+  $("zoomIn").onclick = function () { zoomAt(1.5); };
+  $("zoomOut").onclick = function () { zoomAt(1 / 1.5); };
+  $("zoomFit").onclick = fit;
+  function zoomAt(k) {
+    var tAt = tOf(box.scrollLeft + box.clientWidth / 2);
+    PPS = Math.max(MIN_PPS, Math.min(MAX_PPS, PPS * k));
+    resizeCanvas(); paint();
+    box.scrollLeft = Math.max(0, xOf(tAt) - box.clientWidth / 2);
+  }
+  tl.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    var rect = tl.getBoundingClientRect();
+    var at = e.clientX - rect.left;
+    var tAt = tOf(at);
+    PPS = Math.max(MIN_PPS, Math.min(MAX_PPS, PPS * (e.deltaY < 0 ? 1.2 : 1 / 1.2)));
+    resizeCanvas(); paint();
+    box.scrollLeft = Math.max(0, xOf(tAt) - at);
+  }, { passive: false });
+  function localXY(e) {
+    var rect = tl.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  function hideTip() { var tip = $("tooltip"); if (tip) tip.style.display = "none"; }
+  function showTip(t, e) {
+    var tip = $("tooltip");
+    if (!tip) return;
+    tip.innerHTML = "<b>" + esc(t.target) + "</b>" +
+      esc(t.method) + " · " + esc(laneOf(t.lane).label) + "<br>" +
+      fmt(t.start) + " – " + fmt(t.end) + "<br>" + esc(t.ease || "");
+    tip.style.display = "block";
+    var w = tip.offsetWidth, hh = tip.offsetHeight;
+    var left = e.pageX + 14, top = e.pageY + 16;
+    if (left + w > window.scrollX + document.documentElement.clientWidth - 8) left = e.pageX - w - 14;
+    if (top + hh > window.scrollY + document.documentElement.clientHeight - 8) top = e.pageY - hh - 12;
+    tip.style.left = Math.max(4, left) + "px";
+    tip.style.top = Math.max(4, top) + "px";
+  }
+  function seekFromEvent(e) {
+    var p = localXY(e);
+    v.pause();
+    seek(tOf(p.x));
+  }
+  tl.addEventListener("pointerdown", function (e) {
+    if (e.button !== 0) return;
+    tl.setPointerCapture(e.pointerId);
+    var p = localXY(e), t = nodeAt(p.x, p.y);
+    if (t) {
+      dragging = false;
+      v.pause(); seek(t.start);
+      return;
+    }
+    dragging = true;
+    seekFromEvent(e);
+  });
+  tl.addEventListener("pointermove", function (e) {
+    var p = localXY(e);
+    if (dragging) { seekFromEvent(e); return; }
+    var t = nodeAt(p.x, p.y);
+    var id = t ? t.id : null;
+    if (id !== hoverId) { hoverId = id; paint(); }
+    if (t) showTip(t, e); else hideTip();
+  });
+  tl.addEventListener("pointerup", function () { dragging = false; });
+  tl.addEventListener("pointerleave", function () { hoverId = null; hideTip(); paint(); });
+
+  /* ---------- lane legend (memory only) ---------- */
+  function renderLaneLegend() {
+    var el = $("laneLegend");
+    var lanes = S.lanes || [];
+    if (!lanes.length) { el.innerHTML = ""; el.style.display = "none"; return; }
+    el.style.display = "flex";
+    el.innerHTML = lanes.map(function (l) {
+      var off = hiddenLanes[l.key] ? " off" : "";
+      return '<span class="lchip' + off + '" data-lane="' + esc(l.key) + '" title="点击隐藏 / 显示这一道">' +
+        '<span class="dot" style="background:' + esc(l.color) + '"></span>' +
+        esc(l.label) + ' <span class="n">' + (l.count || 0) + "</span></span>";
+    }).join("");
+  }
+  $("laneLegend").addEventListener("click", function (e) {
+    var chip = e.target.closest(".lchip");
+    if (!chip) return;
+    var key = chip.getAttribute("data-lane");
+    if (hiddenLanes[key]) delete hiddenLanes[key];
+    else hiddenLanes[key] = true;
+    renderLaneLegend(); paint();
+  });
+
+  /* ---------- list ---------- */
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+  function renderFilters() {
+    var total = S.markers.length;
+    var html = '<span class="fchip ' + (filterCat === "all" ? "sel" : "") + '" data-cat="all">全部 ' + total + "</span>";
+    S.categories.forEach(function (c) {
+      var n = S.markers.filter(function (m) { return m.cat === c.id; }).length;
+      html += '<span class="fchip ' + (filterCat === c.id ? "sel" : "") + '" data-cat="' + c.id + '">' +
+        '<span class="dot" style="background:' + c.color + '"></span>' + esc(c.name) + " " + n + "</span>";
+    });
+    $("filters").innerHTML = html;
+  }
+  function renderCats() {
+    $("cats").innerHTML = S.categories.map(function (c) {
+      var n = S.markers.filter(function (m) { return m.cat === c.id; }).length;
+      return '<div class="c"><span class="dot" style="background:' + c.color + '"></span>' +
+        '<span class="nm">' + esc(c.name) + '</span><span style="opacity:.55">' + n + " 个</span>" +
+        '<button data-delcat="' + c.id + '">删除</button></div>';
+    }).join("");
+    var sel = $("catPick");
+    sel.innerHTML = S.categories.map(function (c) {
+      return '<option value="' + c.id + '">' + esc(c.name) + "</option>";
+    }).join("");
+    sel.value = cat;
+  }
+  function renderList() {
+    renderFilters(); renderCats();
+    if (typeof updateMergeBtn === "function") updateMergeBtn();
+    var list = S.markers.filter(function (m) { return filterCat === "all" || m.cat === filterCat; })
+      .slice().sort(function (a, b) { return a.from - b.from; });
+    $("listCount").textContent = S.markers.length + " 个 · 显示 " + list.length;
+    if (!list.length) { $("list").innerHTML = '<div class="empty">这一类还没有标记。</div>'; paint(); return; }
+    $("list").innerHTML = list.map(function (m) {
+      var c = catOf(m.cat);
+      var right = m.to > m.from + 0.001 ? fmt(m.from) + "+" + (m.to - m.from).toFixed(2) : fmt(m.from);
+      var isPicked = picked.indexOf(m.id) >= 0;
+      return '<div class="mk' + (isPicked ? " picked" : "") + '" data-id="' + m.id + '">' +
+        '<button class="pk" data-pick="1" title="勾选以合并">' + (isPicked ? "✓" : "") + '</button>' +
+        '<span class="dot" style="background:' + c.color + '"></span>' +
+        '<span class="tm">' + right + "</span>" +
+        '<span class="sc">' + (m.scene || "") + "</span>" +
+        '<input class="tx" value="' + esc(m.text) + '" placeholder="写一句怎么改">' +
+        '<select class="ct">' + S.categories.map(function (k) {
+          return '<option value="' + k.id + '"' + (k.id === m.cat ? " selected" : "") + ">" + esc(k.name) + "</option>";
+        }).join("") + "</select>" +
+        '<button data-act="go">跳</button>' +
+        '<button data-act="del" class="danger">×</button>' +
+        "</div>";
+    }).join("");
+    paint();
+  }
+
+  $("filters").addEventListener("click", function (e) {
+    var f = e.target.closest(".fchip"); if (!f) return;
+    filterCat = f.getAttribute("data-cat");
+    picked = [];
+    renderList();
+  });
+
+  $("list").addEventListener("click", function (e) {
+    var btn = e.target.closest("button"); var card = e.target.closest(".mk"); if (!card) return;
+    var id = card.getAttribute("data-id");
+    var mk = S.markers.find(function (x) { return x.id === id; }); if (!mk) return;
+    if (btn && btn.getAttribute("data-pick")) {
+      var at = picked.indexOf(id);
+      if (at >= 0) picked.splice(at, 1);
+      else { picked.push(id); if (picked.length > 2) picked.shift(); }
+      renderList();
+      return;
+    }
+    if (!btn) {
+      document.querySelectorAll(".mk.sel").forEach(function (x) { x.classList.remove("sel"); });
+      card.classList.add("sel"); v.pause(); seek(mk.from); return;
+    }
+    if (btn.getAttribute("data-act") === "del") {
+      fetch("/api/mark/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: id }) })
+        .then(function () { S.markers = S.markers.filter(function (x) { return x.id !== id; }); renderList(); });
+      return;
+    }
+    document.querySelectorAll(".mk.sel").forEach(function (x) { x.classList.remove("sel"); });
+    card.classList.add("sel"); v.pause(); seek(mk.from);
+  });
+  $("list").addEventListener("change", function (e) {
+    var card = e.target.closest(".mk"); if (!card) return;
+    var id = card.getAttribute("data-id");
+    var payload = { id: id };
+    if (e.target.classList.contains("tx")) payload.text = e.target.value;
+    if (e.target.classList.contains("ct")) payload.cat = e.target.value;
+    fetch("/api/mark/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { S.markers = S.markers.map(function (x) { return x.id === id ? d.marker : x; }); renderList(); }
+      });
+  });
+  function updateMergeBtn() {
+    var b = $("mergeBtn"), h = $("pickHint");
+    if (!b) return;
+    b.disabled = picked.length !== 2;
+    if (picked.length === 0) h.textContent = "勾选两个点，就能并成一段区间";
+    else if (picked.length === 1) h.textContent = "再勾一个点（还差 1 个）";
+    else {
+      var a = S.markers.filter(function (m) { return m.id === picked[0]; })[0];
+      var c2 = S.markers.filter(function (m) { return m.id === picked[1]; })[0];
+      if (a && c2) h.textContent = "将合并 " + fmt(Math.min(a.from, c2.from)) + " → " + fmt(Math.max(a.to, c2.to));
+      else h.textContent = "可以合并了";
+    }
+  }
+
+  function doMerge() {
+    if (picked.length !== 2) { toast("先勾选两个标记"); return; }
+    fetch("/api/mark/merge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: picked.slice() }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { toast(d.error === "same frame" ? "两个点在同一帧，合不出区间" : ("合并失败：" + (d.error || "?"))); return; }
+        S.markers = d.markers; picked = [];
+        renderList();
+        var card = document.querySelector('.mk[data-id="' + d.marker.id + '"]');
+        if (card) { card.classList.add("sel"); }
+        v.pause(); seek(d.marker.from);
+        toast("已合并 " + fmt(d.marker.from) + " → " + fmt(d.marker.to));
+      });
+  }
+  $("mergeBtn").onclick = doMerge;
+
+  $("catPick").addEventListener("change", function () { cat = $("catPick").value; });
+  $("addCat").onclick = function () {
+    var name = $("newCatName").value.trim(); if (!name) { toast("写个分类名"); return; }
+    fetch("/api/cat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name, color: $("newCatColor").value }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { S.categories = d.categories; cat = d.category.id; $("newCatName").value = ""; renderList(); toast("新分类：" + d.category.name); }
+      });
+  };
+  $("cats").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    var id = b.getAttribute("data-delcat");
+    if (!confirm("删掉这个分类？里面的标记会归到第一个分类。")) return;
+    fetch("/api/cat/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: id }) })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { S.categories = d.categories; S.markers = d.markers; cat = S.categories[0].id; renderList(); }
+        else toast(d.error || "删不掉");
+      });
+  });
+
+  /* ---------- export ---------- */
+  $("copyAll").onclick = function () {
+    if (!S.markers.length) { toast("还没有标记"); return; }
+    var lines = [];
+    S.categories.forEach(function (c) {
+      var ms = S.markers.filter(function (m) { return m.cat === c.id; }).sort(function (a, b) { return a.from - b.from; });
+      if (!ms.length) return;
+      lines.push("## " + c.name + "（" + ms.length + "）");
+      ms.forEach(function (m) {
+        var span = m.to > m.from + 0.001 ? fmt(m.from) + "–" + fmt(m.to) : fmt(m.from);
+        lines.push("- " + span + "  " + (m.scene || "") + "  " + (m.text || "（未写说明）"));
+      });
+      lines.push("");
+    });
+    var text = lines.join("\n");
+    var out = $("out"); out.value = text; out.select();
+    try { navigator.clipboard.writeText(text); } catch (e) {}
+    toast("清单已生成并复制（" + S.markers.length + " 条）");
+  };
+  $("refresh").onclick = function () { boot(true); };
+
+  /* ---------- keys ---------- */
+  document.addEventListener("mousedown", function (e) { if (e.target.closest("button")) e.preventDefault(); });
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "textarea" || tag === "input" || tag === "select") return;
+    switch (e.key) {
+      case " ": e.preventDefault(); v.paused ? v.play() : v.pause(); break;
+      case "ArrowLeft": e.preventDefault(); v.pause(); seek(currentT() - (e.shiftKey ? 0.1 : e.altKey ? 1 : 1 / FPS)); break;
+      case "ArrowRight": e.preventDefault(); v.pause(); seek(currentT() + (e.shiftKey ? 0.1 : e.altKey ? 1 : 1 / FPS)); break;
+      case "m": case "M": $("markPoint").click(); break;
+      case "i": case "I": $("markIn").click(); break;
+      case "o": case "O": $("markOut").click(); break;
+      case "z": case "Z": $("undo").click(); break;
+      case "l": case "L": $("loop").click(); break;
+      case "g": case "G": doMerge(); break;
+      case "s": case "S": $("shot").click(); break;
+      case ",": case ".": {
+        var sorted = S.markers.slice().sort(function (a, b) { return a.from - b.from; });
+        if (!sorted.length) break;
+        var t = currentT(), pick = null;
+        if (e.key === ".") pick = sorted.find(function (m) { return m.from > t + 0.005; }) || sorted[0];
+        else { var prev = sorted.filter(function (m) { return m.from < t - 0.005; }); pick = prev.length ? prev[prev.length - 1] : sorted[sorted.length - 1]; }
+        if (pick) { v.pause(); seek(pick.from); }
+        break;
+      }
+    }
+  });
+
+  /* ---------- live sync with the chosen project ---------- */
+  function refreshMarkerScenes() {
+    (S.markers || []).forEach(function (m) {
+      var sc = sceneAt(m.from), el = document.querySelector('.mk[data-id="' + m.id + '"] .sc');
+      if (el && el.textContent !== sc.id) el.textContent = sc.id;
+      m.scene = sc.id;
+    });
+  }
+
+  function pollMeta() {
+    fetch("/api/meta").then(function (r) { return r.json(); }).then(function (m) {
+      if (!m || m.ok === false) return null;
+      if (m.videoStale && m.video) {
+        S.video = m.video;
+        setVideo(m.video);
+        fillVideoPick(S.videos || [], m.video);
+      }
+      if (S.kind !== "hyperframes") return null;
+      if (!m.kfStale && m.version === lastVersion) return null;
+      return fetch("/api/keyframes").then(function (r) { return r.json(); }).then(function (k) {
+        if (k && k.ok) {
+          S.tweens = k.tweens || [];
+          S.scenes = k.scenes || [];
+          S.lanes = k.lanes || [];
+          S.counts = k.counts || S.counts;
+          S.kfError = null;
+          lastVersion = k.version || m.version || lastVersion;
+          refreshMarkerScenes();
+          renderLaneLegend(); renderList(); paint(); updateBanner();
+          toast("动画节点已随项目更新");
+        } else if (k) {
+          S.kfError = {
+            cmd: k.cmd || "", reason: k.reason || "error",
+            stderr: k.stderr || "", stdoutTail: k.stdoutTail || ""
+          };
+          updateBanner();
+        }
+      });
+    }).catch(function () {});
+  }
+
+  /* ---------- state wiring ---------- */
+  var TRANSPORT_IDS = ["play", "fmin1", "fplus1", "mmin1", "mplus1", "smin1", "splus1",
+    "markPoint", "markIn", "markOut", "undo", "loop", "shot"];
+
+  function setTransport(on) {
+    TRANSPORT_IDS.forEach(function (id) { var el = $(id); if (el) el.disabled = !on; });
+  }
+
+  function setFolderChip(p) {
+    var el = $("folderChip");
+    el.textContent = p || "未选择文件夹";
+    el.title = p || "";
+  }
+
+  function setVideo(info) {
+    if (!info || !info.rel) {
+      v.removeAttribute("src");
+      try { v.load(); } catch (e) {}
+      $("fileChip").textContent = "无视频";
+      $("fileChip").title = "";
+      return;
+    }
+    v.src = "/media/" + encodeURI(info.rel) + "?v=" + (info.mtime || 0);
+    $("fileChip").textContent = baseName(info.rel);
+    $("fileChip").title = info.abs || info.rel;
+  }
+
+  function fillVideoPick(videos, current) {
+    var sel = $("videoPick");
+    if (!videos || !videos.length) {
+      sel.innerHTML = '<option value="">（无视频）</option>';
+      sel.value = "";
+      return;
+    }
+    sel.innerHTML = videos.map(function (x) {
+      return '<option value="' + esc(x.rel) + '">' + esc(x.rel) + "</option>";
+    }).join("");
+    sel.value = current && current.rel ? current.rel : videos[0].rel;
+  }
+
+  function showBanner(text, detail) {
+    $("bannerText").textContent = text;
+    var det = $("bannerDetails"), pre = $("bannerPre");
+    if (detail) { pre.textContent = detail; det.hidden = false; }
+    else { pre.textContent = ""; det.hidden = true; }
+    $("banner").hidden = false;
+  }
+
+  function updateBanner() {
+    var lines = [], detail = "";
+    if (S.ok === false) lines.push(S.notice || "请选择一个项目文件夹");
+    else if (S.notice) lines.push(S.notice);
+    if (S.kfError) {
+      lines.push("动画节点读取失败：" + (S.kfError.reason || "error") +
+        "（命令：" + (S.kfError.cmd || "") + "）");
+      detail = "命令：" + (S.kfError.cmd || "") + "\n原因：" + (S.kfError.reason || "") +
+        "\n\n" + String(S.kfError.stderr || "").slice(0, 1200);
+    }
+    if (!lines.length) {
+      $("bannerText").textContent = "";
+      $("bannerPre").textContent = "";
+      $("bannerDetails").hidden = true;
+      $("banner").hidden = true;
+      return;
+    }
+    showBanner(lines.join(" · "), detail);
+  }
+
+  function applyEmpty(d) {
+    d = d || {};
+    S = {
+      ok: false, kind: null,
+      notice: d.notice || d.error || "请选择一个项目文件夹",
+      projectPath: d.projectPath || null, chosenPath: d.chosenPath || null,
+      scenes: [], tweens: [], lanes: [], counts: null,
+      categories: [], markers: [], videos: [], video: null,
+      kfError: d.kfError || null, version: null
+    };
+    DURATION = 69; FPS = 30; lastVersion = 0; cat = null; picked = [];
+    hoverId = null; hideTip();
+    setVideo(null);
+    fillVideoPick([], null);
+    setFolderChip(null);
+    setTransport(false);
+    renderLaneLegend();
+    renderList(); fit(); paint(); updateBanner();
+  }
+
+  function applyState(d) {
+    if (!d || d.ok === false) { applyEmpty(d); return; }
+    S = d;
+    S.scenes = d.scenes || [];
+    S.tweens = d.tweens || [];
+    S.lanes = d.lanes || [];
+    S.categories = d.categories || [];
+    S.markers = d.markers || [];
+    S.videos = d.videos || [];
+    S.counts = d.counts || null;
+    S.kfError = d.kfError || null;
+    DURATION = d.duration > 0 ? d.duration : 69;
+    FPS = d.fps || 30;
+    lastVersion = d.version || 0;
+    picked = []; hoverId = null; hideTip();
+    if (!cat || !S.categories.some(function (c) { return c.id === cat; })) {
+      cat = S.categories.length ? S.categories[0].id : null;
+    }
+    setVideo(d.video);
+    fillVideoPick(S.videos, d.video);
+    setFolderChip(d.chosenPath);
+    setTransport(true);
+    renderLaneLegend();
+    renderList(); fit(); paint(); updateBanner();
+  }
+
+  function boot(toastWhenDone) {
+    fetch("/api/state").then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || d.ok === false) { applyEmpty(d); return; }
+      applyState(d);
+      if (toastWhenDone) toast("已刷新");
+    }).catch(function (err) {
+      applyEmpty({ notice: "读取状态失败：" + err });
+    });
+  }
+
+  $("videoPick").addEventListener("change", function () {
+    var rel = this.value;
+    if (!rel) return;
+    var info = null;
+    for (var i = 0; i < (S.videos || []).length; i++) if (S.videos[i].rel === rel) info = S.videos[i];
+    if (!info) info = { rel: rel, abs: rel, mtime: 0 };
+    S.video = info;
+    setVideo(info);
+  });
+
+  $("pickFolder").onclick = function () {
+    var btn = this, label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "等待选择…";
+    var finish = function () { btn.disabled = false; btn.textContent = label; };
+    fetch("/api/project/pick", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r && r.ok) { applyState(r.state); toast("已切换项目"); return; }
+        if (r && r.reason === "cancel") return;
+        var msg = (r && r.error) || "选择失败";
+        toast(msg);
+        showBanner("选择文件夹失败：" + msg);
+      }, function (err) {
+        toast("选择失败");
+        showBanner("选择文件夹失败：" + err);
+      })
+      .then(finish);
+  };
+
+  $("reloadBtn").onclick = function () {
+    var btn = this;
+    btn.disabled = true;
+    fetch("/api/reload", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r && r.ok) { applyState(r.state); toast("已重新载入"); return; }
+        var msg = (r && r.error) || "载入失败";
+        toast(msg);
+        showBanner("重新载入失败：" + msg);
+      }, function (err) {
+        toast("载入失败");
+        showBanner("重新载入失败：" + err);
+      })
+      .then(function () { btn.disabled = false; });
+  };
+
+  window.addEventListener("resize", function () { resizeCanvas(); paint(); });
+  boot();
+  setInterval(pollMeta, 4000);
+})();
+</script>
+</body>
+</html>
